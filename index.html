@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>麻酔 1問1答 自習アプリ</title>
+<style>
+  :root{
+    --bg:#0F1518;
+    --bg-grid: rgba(95,217,160,0.035);
+    --panel:#171F24;
+    --panel2:#1D262B;
+    --border:#28353C;
+    --text:#E7EDEF;
+    --text-dim:#84969C;
+    --dim:#7C8A90;
+    --green:#5FD9A0;
+    --green-dim:#2E5B47;
+    --amber:#E8B45B;
+    --amber-dim:#5C4A28;
+    --red:#E2685F;
+    --red-dim:#5C302C;
+    --blue:#5FA8D9;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic Medium", "Yu Gothic", Meiryo, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px) 0 0/100% 28px,
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding-bottom:48px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:20px 16px 0;}
+  header{padding:6px 2px 18px;}
+  header .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.14em;
+    color:var(--green);
+    text-transform:uppercase;
+  }
+  header h1{
+    margin:4px 0 2px;
+    font-size:21px;
+    font-weight:700;
+    letter-spacing:.01em;
+  }
+  header p{margin:0;color:var(--dim);font-size:12.5px;}
+
+  .segwrap{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+  .seg{
+    display:flex;background:var(--panel);border:1px solid var(--border);
+    border-radius:10px;overflow:hidden;flex:1;min-width:220px;
+  }
+  .seg button{
+    flex:1;padding:9px 4px;border:none;background:transparent;color:var(--dim);
+    font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;
+    border-right:1px solid var(--border);transition:.15s;
+  }
+  .seg button:last-child{border-right:none;}
+  .seg button.active{background:var(--green-dim);color:var(--green);}
+  .seg button:hover:not(.active){color:var(--text);}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+  .chip{
+    font-family:var(--sans);
+    font-size:12px;padding:6px 11px;border-radius:20px;
+    border:1px solid var(--border);background:var(--panel);color:var(--dim);
+    cursor:pointer;user-select:none;transition:.15s;white-space:nowrap;
+  }
+  .chip.on{background:rgba(95,217,160,.12);border-color:var(--green-dim);color:var(--green);}
+  .chip.all{font-weight:700;}
+
+  .statusline{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-family:var(--mono);font-size:12px;color:var(--dim);margin-bottom:8px;padding:0 2px;
+  }
+  .statusline b{color:var(--text);font-weight:600;}
+
+  .card{
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--border);border-radius:16px;
+    padding:20px 20px 22px;position:relative;overflow:hidden;
+    box-shadow:0 20px 40px -20px rgba(0,0,0,.6);
+  }
+  .badge-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .badge{
+    font-family:var(--mono);font-size:11px;color:var(--blue);
+    background:rgba(95,168,217,.10);border:1px solid rgba(95,168,217,.25);
+    padding:3px 9px;border-radius:6px;letter-spacing:.02em;
+  }
+  .badge.sub{color:var(--dim);background:transparent;border-color:var(--border);}
+  .qno{font-family:var(--mono);font-size:12px;color:var(--dim);}
+
+  .wave{width:100%;height:22px;margin:2px 0 16px;opacity:.55;}
+  .wave path{fill:none;stroke:var(--green);stroke-width:1.4;}
+
+  .qtext{
+    font-size:18px;line-height:1.62;font-weight:600;color:var(--text);
+    margin-bottom:6px;min-height:66px;
+  }
+  .revealbtn{
+    width:100%;padding:13px;border-radius:10px;border:1px solid var(--green-dim);
+    background:rgba(95,217,160,.10);color:var(--green);font-size:14px;font-weight:700;
+    cursor:pointer;font-family:var(--sans);letter-spacing:.02em;
+  }
+  .revealbtn:hover{background:rgba(95,217,160,.18);}
+
+  .answers{display:none;margin-top:14px;}
+  .answers.show{display:block;}
+  .anslabel{font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:8px;letter-spacing:.06em;}
+  .kwlist{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
+  .kw{
+    font-size:13px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);
+    background:var(--panel);color:var(--text);cursor:pointer;user-select:none;transition:.12s;
+    line-height:1.4;
+  }
+  .kw.checked{background:rgba(95,217,160,.14);border-color:var(--green-dim);color:var(--green);}
+  .kw.checked::before{content:"✓ ";}
+  .checkcount{font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-bottom:16px;}
+  .checkcount.enough{color:var(--green);}
+
+  .gradebar{display:flex;gap:8px;}
+  .gradebtn{
+    flex:1;padding:12px 4px;border-radius:10px;border:1px solid var(--border);
+    background:var(--panel);cursor:pointer;font-family:var(--sans);font-weight:700;font-size:13px;
+    display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--dim);
+  }
+  .gradebtn .mk{font-size:17px;}
+  .gradebtn.ok{color:var(--green);} .gradebtn.ok:hover{background:rgba(95,217,160,.10);border-color:var(--green-dim);}
+  .gradebtn.mid{color:var(--amber);} .gradebtn.mid:hover{background:rgba(232,180,91,.10);border-color:var(--amber-dim);}
+  .gradebtn.ng{color:var(--red);} .gradebtn.ng:hover{background:rgba(226,104,95,.10);border-color:var(--red-dim);}
+  .kbd{font-family:var(--mono);font-size:9.5px;color:var(--dim);opacity:.7;}
+
+  .navrow{display:flex;justify-content:space-between;margin-top:12px;}
+  .navrow button{
+    background:none;border:none;color:var(--dim);font-family:var(--sans);
+    font-size:12.5px;cursor:pointer;padding:6px 4px;
+  }
+  .navrow button:hover{color:var(--text);}
+
+  .empty{padding:40px 10px;text-align:center;color:var(--dim);}
+  .empty .big{font-size:30px;margin-bottom:8px;}
+
+  .stats{
+    margin-top:22px;background:var(--panel);border:1px solid var(--border);
+    border-radius:14px;padding:16px 18px;
+  }
+  .stats h2{
+    font-size:12px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;
+    margin:0 0 12px;font-family:var(--mono);
+  }
+  .overallrow{display:flex;gap:18px;margin-bottom:14px;}
+  .stat{flex:1;}
+  .stat .num{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text);}
+  .stat .num small{font-size:12px;color:var(--dim);font-weight:400;}
+  .stat .lbl{font-size:11px;color:var(--dim);margin-top:2px;}
+  .stat.green .num{color:var(--green);}
+  .stat.amber .num{color:var(--amber);}
+  .stat.red .num{color:var(--red);}
+
+  .stackbar{height:8px;border-radius:5px;overflow:hidden;display:flex;background:#0000003a;margin-bottom:16px;}
+  .stackbar div{height:100%;}
+
+  .catrow{display:flex;align-items:center;gap:10px;font-size:12px;padding:5px 0;}
+  .catrow .cname{width:110px;flex:none;color:var(--dim);}
+  .catrow .bar{flex:1;height:6px;background:#0000003a;border-radius:4px;overflow:hidden;}
+  .catrow .bar div{height:100%;background:var(--green);}
+  .catrow .pct{width:60px;flex:none;text-align:right;font-family:var(--mono);color:var(--dim);}
+
+  .resetline{margin-top:16px;text-align:center;}
+  .resetline button{
+    background:none;border:none;color:var(--dim);font-size:11.5px;text-decoration:underline;
+    cursor:pointer;font-family:var(--sans);
+  }
+  footer{text-align:center;color:var(--dim);font-size:11px;padding:26px 10px 0;font-family:var(--mono);}
+
+  @media (prefers-reduced-motion: reduce){ * { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">OKAYAMA ANESTHESIA / SELF-STUDY</div>
+    <h1>麻酔 1問1答 自習アプリ</h1>
+    <p>quiz.xlsx を編集してアップロードすれば内容に自動反映／進捗は端末内に保存</p>
+  </header>
+
+  <div class="segwrap">
+    <div class="seg" id="modeSeg">
+      <button data-mode="seq" class="active">順番</button>
+      <button data-mode="rand">ランダム</button>
+      <button data-mode="review">復習</button>
+    </div>
+  </div>
+
+  <div class="chips" id="catChips"></div>
+
+  <div class="statusline">
+    <span id="statusLeft">-</span>
+    <span id="statusRight">-</span>
+  </div>
+
+  <div class="card" id="card">
+    <!-- filled by JS -->
+  </div>
+
+  <div class="stats">
+    <h2>Progress</h2>
+    <div class="overallrow">
+      <div class="stat">
+        <div class="num" id="statSeen">0<small> / 206</small></div>
+        <div class="lbl">学習済み</div>
+      </div>
+      <div class="stat green">
+        <div class="num" id="statRate">0<small>%</small></div>
+        <div class="lbl">正答率</div>
+      </div>
+      <div class="stat amber">
+        <div class="num" id="statReview">0</div>
+        <div class="lbl">復習待ち</div>
+      </div>
+    </div>
+    <div class="stackbar" id="stackbar"></div>
+    <div id="catStats"></div>
+    <div class="resetline"><button id="resetBtn">この端末の学習記録をリセット</button></div>
+  </div>
+
+  <footer>space: 解答表示 / next &nbsp;·&nbsp; 1 2 3: 採点 &nbsp;·&nbsp; 進捗はこの端末のブラウザ内にのみ保存されます</footer>
+</div>
+
+<script src="xlsx.full.min.js"></script>
+<script>
+let QUESTIONS = [];
+const STORE_KEY = "anesthesia_quiz_progress_v1";
+let CATS = [];
+let CAT_COLORS = {};
+const PALETTE = ["#5FD9A0","#5FA8D9","#E8B45B","#E2685F","#B58CE0","#5FC7D9","#D98CC0","#9BC15F","#D9A05F"];
+
+let progress = loadProgress();
+let mode = "seq";
+let activeCats = new Set();
+let queue = [];
+let idx = 0;
+let revealed = false;
+let checkedKw = new Set();
+
+function loadProgress(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveProgress(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(progress)); }catch(e){}
+}
+
+function buildChips(){
+  const wrap = document.getElementById('catChips');
+  wrap.innerHTML = '';
+  const allChip = document.createElement('div');
+  allChip.className = 'chip all on';
+  allChip.textContent = 'すべて';
+  allChip.onclick = ()=>{
+    if(activeCats.size === CATS.length){ activeCats.clear(); }
+    else { CATS.forEach(c=>activeCats.add(c)); }
+    refreshChips(); rebuildQueue();
+  };
+  wrap.appendChild(allChip);
+  CATS.forEach(c=>{
+    const el = document.createElement('div');
+    el.className = 'chip on';
+    el.textContent = c;
+    el.dataset.cat = c;
+    el.onclick = ()=>{
+      if(activeCats.has(c)) activeCats.delete(c); else activeCats.add(c);
+      refreshChips(); rebuildQueue();
+    };
+    wrap.appendChild(el);
+  });
+}
+function refreshChips(){
+  document.querySelectorAll('.chip').forEach(el=>{
+    if(el.classList.contains('all')){
+      el.classList.toggle('on', activeCats.size === CATS.length);
+    } else {
+      el.classList.toggle('on', activeCats.has(el.dataset.cat));
+    }
+  });
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function rebuildQueue(){
+  let pool = QUESTIONS.filter(q=>activeCats.has(q.cat));
+  if(mode === 'review'){
+    pool = pool.filter(q=>{
+      const p = progress[q.id];
+      return p && (p.last === 'ng' || p.last === 'mid');
+    });
+  }
+  if(mode === 'rand'){
+    pool = shuffle(pool);
+  }
+  queue = pool;
+  idx = 0;
+  render();
+}
+
+document.getElementById('modeSeg').addEventListener('click', e=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  mode = btn.dataset.mode;
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('active', b===btn));
+  rebuildQueue();
+});
+
+function currentQ(){ return queue[idx]; }
+
+function render(){
+  revealed = false;
+  checkedKw = new Set();
+  const card = document.getElementById('card');
+  const total = queue.length;
+
+  document.getElementById('statusLeft').textContent =
+    total ? `${idx+1} / ${total} 問` : '対象0問';
+  document.getElementById('statusRight').textContent =
+    mode === 'seq' ? '順番モード' : mode === 'rand' ? 'ランダムモード' : '復習モード';
+
+  if(total === 0){
+    card.innerHTML = `
+      <div class="empty">
+        <div class="big">${mode==='review' ? '🎉' : '🗂️'}</div>
+        <div>${mode==='review' ? '復習待ちの問題はありません。' : '対象の問題がありません。分野を選んでください。'}</div>
+      </div>`;
+    renderStats();
+    return;
+  }
+
+  if(idx >= total){
+    document.getElementById('statusLeft').textContent = `${total} / ${total} 問`;
+    card.innerHTML = `
+      <div class="empty">
+        <div class="big">✅</div>
+        <div>この範囲の問題は最後まで終わりました。</div>
+      </div>
+      <div class="navrow" style="margin-top:14px;">
+        <button id="restartBtn">← 最初から解き直す</button>
+        <button id="reshuffleBtn">${mode==='rand' ? 'もう一度シャッフル →' : '前の問題へ →'}</button>
+      </div>
+    `;
+    document.getElementById('restartBtn').onclick = ()=>{ idx = 0; render(); };
+    document.getElementById('reshuffleBtn').onclick = ()=>{
+      if(mode==='rand'){ rebuildQueue(); } else { idx = total - 1; render(); }
+    };
+    renderStats();
+    return;
+  }
+
+  const q = currentQ();
+  card.innerHTML = `
+    <div class="badge-row">
+      <div>
+        <span class="badge">${escapeHtml(q.cat)}</span>
+        <span class="badge sub">${escapeHtml(q.sub)}</span>
+      </div>
+      <span class="qno">No.${q.id}</span>
+    </div>
+    <svg class="wave" viewBox="0 0 300 22" preserveAspectRatio="none"><path d="M0,11 L40,11 L48,3 L56,19 L64,11 L110,11 L118,4 L126,18 L134,11 L300,11"/></svg>
+    <div class="qtext">${escapeHtml(q.q)}</div>
+    <button class="revealbtn" id="revealBtn">解答を見る（space）</button>
+    <div class="answers" id="answersBox">
+      <div class="anslabel">想定回答（キーワード） — タップでチェック</div>
+      <div class="kwlist" id="kwlist"></div>
+      <div class="checkcount" id="checkcount"></div>
+      <div class="gradebar">
+        <button class="gradebtn ok" data-g="ok"><span class="mk">◯</span>全部言えた<span class="kbd">1</span></button>
+        <button class="gradebtn mid" data-g="mid"><span class="mk">△</span>あと少し<span class="kbd">2</span></button>
+        <button class="gradebtn ng" data-g="ng"><span class="mk">✕</span>言えなかった<span class="kbd">3</span></button>
+      </div>
+    </div>
+    <div class="navrow">
+      <button id="prevBtn">← 前の問題</button>
+      <button id="skipBtn">採点せず次へ →</button>
+    </div>
+  `;
+
+  document.getElementById('revealBtn').onclick = reveal;
+  document.getElementById('prevBtn').onclick = ()=>{ if(idx>0){ idx--; render(); } };
+  document.getElementById('skipBtn').onclick = next;
+
+  const kwlist = document.getElementById('kwlist');
+  q.a.forEach((a, i)=>{
+    const el = document.createElement('div');
+    el.className = 'kw';
+    el.textContent = a;
+    el.onclick = ()=>{
+      if(checkedKw.has(i)) checkedKw.delete(i); else checkedKw.add(i);
+      el.classList.toggle('checked');
+      updateCheckcount(q);
+    };
+    kwlist.appendChild(el);
+  });
+
+  document.querySelectorAll('.gradebtn').forEach(b=>{
+    b.onclick = ()=>grade(b.dataset.g);
+  });
+
+  renderStats();
+}
+
+function reveal(){
+  revealed = true;
+  document.getElementById('answersBox').classList.add('show');
+  document.getElementById('revealBtn').style.display = 'none';
+}
+
+function updateCheckcount(q){
+  const el = document.getElementById('checkcount');
+  const n = checkedKw.size;
+  el.textContent = `${n} / ${q.a.length} 個チェック中（必要 ${q.need}個）`;
+  el.classList.toggle('enough', n >= q.need);
+}
+
+function grade(g){
+  const q = currentQ();
+  const p = progress[q.id] || {ok:0, mid:0, ng:0, seen:0};
+  p.seen = (p.seen||0) + 1;
+  p[g] = (p[g]||0) + 1;
+  p.last = g;
+  p.updatedAt = Date.now();
+  progress[q.id] = p;
+  saveProgress();
+  next();
+}
+
+function next(){
+  idx = Math.min(idx + 1, queue.length);
+  render();
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderStats(){
+  const filtered = QUESTIONS.filter(q=>activeCats.has(q.cat));
+  const total = filtered.length;
+  let seen=0, ok=0, mid=0, ng=0, review=0;
+  filtered.forEach(q=>{
+    const p = progress[q.id];
+    if(p && p.last){
+      seen++;
+      if(p.last==='ok') ok++;
+      else if(p.last==='mid'){ mid++; review++; }
+      else if(p.last==='ng'){ ng++; review++; }
+    }
+  });
+  document.getElementById('statSeen').innerHTML = `${seen}<small> / ${total}</small>`;
+  document.getElementById('statRate').innerHTML = seen ? `${Math.round(ok/seen*100)}<small>%</small>` : `0<small>%</small>`;
+  document.getElementById('statReview').textContent = review;
+
+  const bar = document.getElementById('stackbar');
+  bar.innerHTML = '';
+  const segs = [
+    {n:ok, color:'var(--green)'},
+    {n:mid, color:'var(--amber)'},
+    {n:ng, color:'var(--red)'},
+    {n:total-seen, color:'#28353C'}
+  ];
+  segs.forEach(s=>{
+    if(s.n<=0) return;
+    const d = document.createElement('div');
+    d.style.width = (s.n/total*100)+'%';
+    d.style.background = s.color;
+    bar.appendChild(d);
+  });
+
+  const catStats = document.getElementById('catStats');
+  catStats.innerHTML = '';
+  CATS.forEach(c=>{
+    const qs = QUESTIONS.filter(q=>q.cat===c);
+    let s=0, o=0;
+    qs.forEach(q=>{
+      const p = progress[q.id];
+      if(p && p.last){ s++; if(p.last==='ok') o++; }
+    });
+    const pct = qs.length ? Math.round(s/qs.length*100) : 0;
+    const row = document.createElement('div');
+    row.className = 'catrow';
+    row.innerHTML = `
+      <div class="cname">${escapeHtml(c)}</div>
+      <div class="bar"><div style="width:${pct}%;background:${CAT_COLORS[c]}"></div></div>
+      <div class="pct">${s}/${qs.length}</div>
+    `;
+    catStats.appendChild(row);
+  });
+}
+
+document.addEventListener('keydown', e=>{
+  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  if(e.code === 'Space'){
+    e.preventDefault();
+    if(!revealed) reveal(); else next();
+  } else if(revealed && ['1','2','3'].includes(e.key)){
+    grade(e.key==='1'?'ok':e.key==='2'?'mid':'ng');
+  }
+});
+
+document.getElementById('resetBtn').onclick = ()=>{
+  if(confirm('この端末に保存された学習記録をすべて削除します。よろしいですか？')){
+    progress = {};
+    saveProgress();
+    render();
+  }
+};
+
+function parseWorkbookToQuestions(buf){
+  const wb = XLSX.read(buf, {type:'array'});
+  const sheetName = wb.SheetNames.includes('問題一覧') ? '問題一覧' : wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+  if(!rows || rows.length < 2) throw new Error('empty sheet');
+
+  const header = rows[0].map(h=>String(h||'').trim());
+  const findCol = (substr)=>header.findIndex(h=>h.includes(substr));
+  const cIdNo = findCol('No');
+  const cCat  = findCol('大分類');
+  const cSub  = findCol('小分類');
+  const cQ    = findCol('設問');
+  const cAns  = findCol('想定回答');
+  const cNeed = findCol('必要解答数');
+
+  const out = [];
+  for(let r = 1; r < rows.length; r++){
+    const row = rows[r];
+    if(!row || row.length === 0) continue;
+    const qText = cQ >= 0 ? String(row[cQ] || '').trim() : '';
+    if(!qText) continue;
+    const catText = cCat >= 0 ? String(row[cCat] || '').trim() : '未分類';
+    const subText = cSub >= 0 ? String(row[cSub] || '').trim() : '';
+    const ansRaw = cAns >= 0 ? String(row[cAns] || '') : '';
+    const answers = ansRaw.split(/\r?\n/)
+      .map(s => s.replace(/^[・\-\s]+/, '').trim())
+      .filter(Boolean);
+    let need = answers.length ? Math.min(3, Math.max(1, Math.ceil(answers.length * 0.6))) : 1;
+    if(cNeed >= 0){
+      const v = row[cNeed];
+      const n = typeof v === 'number' ? v : parseInt(v, 10);
+      if(Number.isFinite(n) && n > 0) need = n;
+    }
+    const idVal = cIdNo >= 0 ? Number(row[cIdNo]) : NaN;
+    const id = Number.isFinite(idVal) ? idVal : r;
+    out.push({ id, cat: catText, sub: subText, q: qText, a: answers, need });
+  }
+  if(out.length === 0) throw new Error('no questions parsed');
+  return out;
+}
+
+async function init(){
+  const card = document.getElementById('card');
+  card.innerHTML = `<div class="empty"><div class="big">⏳</div><div>quiz.xlsx を読み込み中…</div></div>`;
+  try{
+    const res = await fetch('quiz.xlsx', { cache: 'no-store' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const buf = await res.arrayBuffer();
+    QUESTIONS = parseWorkbookToQuestions(buf);
+  }catch(err){
+    console.error(err);
+    card.innerHTML = `
+      <div class="empty">
+        <div class="big">⚠️</div>
+        <div>quiz.xlsx を読み込めませんでした。</div>
+        <div style="margin-top:10px;font-size:12px;color:var(--dim);line-height:1.7;">
+          ・index.html と同じ場所に quiz.xlsx がアップロードされているか確認してください<br>
+          ・シート名は「問題一覧」のままにしてください<br>
+          ・このファイルを直接ダブルクリックで開いている場合（file://）は仕組み上読み込めません。GitHub PagesのURLから開いてください
+        </div>
+      </div>`;
+    document.getElementById('statusLeft').textContent = '読み込みエラー';
+    return;
+  }
+  CATS = [...new Set(QUESTIONS.map(q => q.cat))];
+  CAT_COLORS = {};
+  CATS.forEach((c, i) => CAT_COLORS[c] = PALETTE[i % PALETTE.length]);
+  activeCats = new Set(CATS);
+  buildChips();
+  rebuildQueue();
+}
+
+init();
+</script>
+</body>
+</html>
