@@ -560,7 +560,7 @@ function parseWorkbookToQuestions(buf){
     const answers = ansRaw.split(/\r?\n/)
       .map(s => s.replace(/^[・\-\s]+/, '').trim())
       .filter(Boolean);
-    let need = answers.length ? Math.min(3, Math.max(1, Math.ceil(answers.length * 0.6))) : 1;
+    let need = answers.length ? Math.max(1, Math.ceil(answers.length * 0.75)) : 1;
     if(cNeed >= 0){
       const v = row[cNeed];
       const n = typeof v === 'number' ? v : parseInt(v, 10);
